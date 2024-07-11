@@ -178,5 +178,8 @@ pyrightconfig.json
 
 # Credentials
 config.py
+scripts/config.py
+
+Scripts/__pycache__
 
 # End of https://www.toptal.com/developers/gitignore/api/python
