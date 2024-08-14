@@ -12,3 +12,4 @@ dash-core-components==2.0.*
 dash-html-components==2.0.*
 dash-leaflet==1.0.*
 dash-table==5.0.*
+plotly==5.22.*
