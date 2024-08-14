@@ -4,6 +4,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import psycopg2
+import pytz
 from shapely.geometry import shape
 from sodapy import Socrata
 
@@ -56,8 +57,8 @@ def get_data(query, cursor):
     return df
 
 
-# Function to calculate duration in years
 def calculate_duration(df, date_col1, date_col2):
+    # Function to calculate duration in years
     duration = (df[date_col2] - df[date_col1]).dt.total_seconds() / (365.25 * 24 * 3600)
     return duration
 
@@ -75,7 +76,7 @@ def publish_data(df):
     df.replace({pd.NA: None}, inplace=True)
     df.replace({np.nan: None}, inplace=True)
 
-    data = df.to_dict(orient='records')
+    data = df.to_dict(orient="records")
     res = soda.replace(DATASET_ID, data)
     print(res)
     return res
@@ -123,11 +124,7 @@ def main():
     gdf_moped = gpd.GeoDataFrame(df_moped_filter, geometry="geometry")
 
     # Adding a unique ID column
-    gdf_moped.insert(0, "moped_component_id", range(1, 1 + len(gdf_moped)))
-
-    gdf_moped.head()
-
-    # # VisionZero processing
+    gdf_moped["moped_component_id"] = gdf_moped["project_component_id"]
 
     # Creaing vision zero dataframe
     QUERY_CRASH_DATA = """SELECT crash_id, crash_fatal_fl, crash_date,
@@ -136,9 +133,7 @@ def main():
 
     df_vz = get_data(QUERY_CRASH_DATA, cursor_vz)
 
-    df_vz.info()
-
-    # Keepiing only those observations where x-y coordinates are present
+    # Keeping only those observations where x-y coordinates are present
     df_vz_filter = df_vz[df_vz["latitude"].notnull() & df_vz["longitude"].notnull()]
 
     df_vz_filter.info()
@@ -148,6 +143,12 @@ def main():
 
     for col in timestamp_columns:
         df_vz_filter.loc[:, col] = df_vz_filter[col].astype(str)
+
+    tz = pytz.timezone("US/Central")
+    earliest_crash_date = tz.localize(pd.to_datetime(df_vz_filter["crash_date"]).min())
+    most_recent_crash_date = tz.localize(
+        pd.to_datetime(df_vz_filter["crash_date"]).max()
+    )
 
     # Creating geodataframe
     gdf_vz = gpd.GeoDataFrame(
@@ -180,11 +181,11 @@ def main():
 
     # Creating a unique ID column
     crashes_near_projects["crash_project_component_id"] = (
-            crashes_near_projects["crash_id"].astype(str)
-            + "-"
-            + crashes_near_projects["project_id"].astype(str)
-            + "-"
-            + crashes_near_projects["project_component_id"].astype(str)
+        crashes_near_projects["crash_id"].astype(str)
+        + "-"
+        + crashes_near_projects["project_id"].astype(str)
+        + "-"
+        + crashes_near_projects["project_component_id"].astype(str)
     )
 
     print(
@@ -225,7 +226,7 @@ def main():
         4, "crash_date", crashes_near_projects.pop("crash_date")
     )
 
-    # project compoenent ID
+    # project component ID
     crashes_near_projects.insert(
         3, "project_component_id", crashes_near_projects.pop("project_component_id")
     )
@@ -254,7 +255,7 @@ def main():
 
     crashes_near_projects.info()
 
-    # Creating indicator variables for crash occuring pre and post completion of mobility project
+    # Creating indicator variables for crash occurring pre and post completion of mobility project
     crashes_near_projects.insert(
         7,
         "crash_pre_completion",
@@ -285,26 +286,12 @@ def main():
         lambda x: float(x)
     )
 
-    crashes_near_projects.info()
-
-    crashes_near_projects["pre_completion_duration"] = crashes_near_projects[
-                                                           "crash_pre_completion"
-                                                       ] * calculate_duration(
-        crashes_near_projects, "crash_date", "substantial_completion_date"
-    )
-    crashes_near_projects["post_completion_duration"] = crashes_near_projects[
-                                                            "crash_post_completion"
-                                                        ] * calculate_duration(
-        crashes_near_projects, "substantial_completion_date", "crash_date"
-    )
-
     pre_completion_stats = (
         crashes_near_projects[crashes_near_projects["crash_pre_completion"] == True]
         .groupby("moped_component_id")
         .agg(
             {
                 "crash_id": "count",
-                "pre_completion_duration": "sum",
                 "crash_fatal_binary": "sum",
                 "tot_injry_cnt": "sum",
                 "death_cnt": "sum",
@@ -329,7 +316,6 @@ def main():
         .agg(
             {
                 "crash_id": "count",
-                "post_completion_duration": "sum",
                 "crash_fatal_binary": "sum",
                 "tot_injry_cnt": "sum",
                 "death_cnt": "sum",
@@ -353,57 +339,6 @@ def main():
         post_completion_stats, on="moped_component_id", how="outer"
     ).fillna(0)
 
-    # Calculating annualized statistics
-    # Crash rate
-    annualized_statistics["pre_annualized_crash_rate"] = (
-            annualized_statistics["pre_crash_count"]
-            / annualized_statistics["pre_completion_duration"]
-    )
-    annualized_statistics["post_annualized_crash_rate"] = (
-            annualized_statistics["post_crash_count"]
-            / annualized_statistics["post_completion_duration"]
-    )
-
-    # Fatality
-    annualized_statistics["pre_annualized_fatal_crash_rate"] = (
-            annualized_statistics["pre_fatal_crash_count"]
-            / annualized_statistics["pre_completion_duration"]
-    )
-    annualized_statistics["post_annualized_fatal_crash_rate"] = (
-            annualized_statistics["post_fatal_crash_count"]
-            / annualized_statistics["post_completion_duration"]
-    )
-
-    # Injury count
-    annualized_statistics["pre_annualized_injury_rate"] = (
-            annualized_statistics["pre_total_injury_count"]
-            / annualized_statistics["pre_completion_duration"]
-    )
-    annualized_statistics["post_annualized_injury_rate"] = (
-            annualized_statistics["post_total_injury_count"]
-            / annualized_statistics["post_completion_duration"]
-    )
-
-    # Death count
-    annualized_statistics["pre_annualized_death_rate"] = (
-            annualized_statistics["pre_total_death_count"]
-            / annualized_statistics["pre_completion_duration"]
-    )
-    annualized_statistics["post_annualized_death_rate"] = (
-            annualized_statistics["post_total_death_count"]
-            / annualized_statistics["post_completion_duration"]
-    )
-
-    # Estimated cost
-    annualized_statistics["pre_annualized_cost"] = (
-            annualized_statistics["pre_est_comp_cost"]
-            / annualized_statistics["pre_completion_duration"]
-    )
-    annualized_statistics["post_annualized_cost"] = (
-            annualized_statistics["post_est_comp_cost"]
-            / annualized_statistics["post_completion_duration"]
-    )
-
     # Getting completion date for each moped component id
     completion_dates = (
         crashes_near_projects.groupby("moped_component_id")[
@@ -416,6 +351,63 @@ def main():
     # Merging into the annualized crash rate DataFrame
     annualized_statistics = annualized_statistics.merge(
         completion_dates, on="moped_component_id", how="left"
+    )
+
+    annualized_statistics["years_before_completion"] = (
+        annualized_statistics["substantial_completion_date"] - earliest_crash_date
+    ).dt.days / 365.25
+    annualized_statistics["years_after_completion"] = (
+        most_recent_crash_date - annualized_statistics["substantial_completion_date"]
+    ).dt.days / 365.25
+    # Calculating annualized statistics
+    # Crash rates
+    annualized_statistics["pre_annualized_crash_rate"] = (
+        annualized_statistics["pre_crash_count"]
+        / annualized_statistics["years_before_completion"]
+    )
+    annualized_statistics["post_annualized_crash_rate"] = (
+        annualized_statistics["post_crash_count"]
+        / annualized_statistics["years_after_completion"]
+    )
+
+    # Fatality
+    annualized_statistics["pre_annualized_fatal_crash_rate"] = (
+        annualized_statistics["pre_fatal_crash_count"]
+        / annualized_statistics["years_before_completion"]
+    )
+    annualized_statistics["post_annualized_fatal_crash_rate"] = (
+        annualized_statistics["post_fatal_crash_count"]
+        / annualized_statistics["years_after_completion"]
+    )
+
+    # Injury count
+    annualized_statistics["pre_annualized_injury_rate"] = (
+        annualized_statistics["pre_total_injury_count"]
+        / annualized_statistics["years_before_completion"]
+    )
+    annualized_statistics["post_annualized_injury_rate"] = (
+        annualized_statistics["post_total_injury_count"]
+        / annualized_statistics["years_after_completion"]
+    )
+
+    # Death count
+    annualized_statistics["pre_annualized_death_rate"] = (
+        annualized_statistics["pre_total_death_count"]
+        / annualized_statistics["years_before_completion"]
+    )
+    annualized_statistics["post_annualized_death_rate"] = (
+        annualized_statistics["post_total_death_count"]
+        / annualized_statistics["years_after_completion"]
+    )
+
+    # Estimated cost
+    annualized_statistics["pre_annualized_cost"] = (
+        annualized_statistics["pre_est_comp_cost"]
+        / annualized_statistics["years_before_completion"]
+    )
+    annualized_statistics["post_annualized_cost"] = (
+        annualized_statistics["post_est_comp_cost"]
+        / annualized_statistics["years_after_completion"]
     )
 
     annualized_statistics = annualized_statistics[
@@ -493,6 +485,9 @@ def main():
     annualized_statistics = annualized_statistics[new_order]
 
     response = publish_data(annualized_statistics)
+
+    # exporting data locally
+    # annualized_statistics.to_csv('../Output/annualized_statistics.csv', na_rep="NA", index=False)
     return response
 
 
