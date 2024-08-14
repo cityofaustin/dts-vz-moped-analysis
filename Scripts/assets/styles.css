@@ -1,0 +1,40 @@
+.app_title {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.card-body {
+    font-size: smaller;
+}
+
+.custom_card {
+    width: 225px;
+}
+
+.navigation_row {
+    margin-bottom: 20px;
+}
+
+/* .custom_container {
+    margin-left: 10px;
+    margin-right: 10px;
+} */
+
+.navigation_row_col_style {
+    padding: 0 15px;
+}
+
+.card-header {
+    font-weight: bolder;
+    text-align: center;
+}
+
+.map {
+    border-radius: 0.5%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+/* .table {
+    border-radius: 0.5%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+} */
