@@ -88,8 +88,8 @@ def main():
 
     # Creating moped dataframe
     QUERY_MOPED = """SELECT project_id, project_component_id, geometry, 
-    line_geometry, substantial_completion_date,
-    component_name, component_name_full, component_subtype, 
+    line_geometry, substantial_completion_date, project_name,
+    component_name, component_name_full, component_subtype, project_lead,
     component_work_types, type_name FROM component_arcgis_online_view"""
 
     # Creating moped dataframe
@@ -116,7 +116,7 @@ def main():
     df_moped_filter.loc[:, "geometry"] = df_moped_filter["geometry"].apply(
         lambda x: shape(x) if x is not None else None
     )
-    df_moped_filter.loc[:, "line_geometry"] = df_moped_filter["line_geometry"].apply(
+    df_moped_filter.loc[:, "line_geometry"] = df_moped_filter["geometry"].apply(
         lambda x: shape(x) if x is not None else None
     )
 
@@ -469,6 +469,10 @@ def main():
             "component_work_types",
             "type_name",
             "line_geometry",
+            "project_name",
+            "project_id",
+            "project_component_id",
+            "project_lead",
         ]
     ].drop_duplicates()
 
@@ -488,7 +492,9 @@ def main():
 
     # exporting data locally
     # annualized_statistics.to_csv('../Output/annualized_statistics.csv', na_rep="NA", index=False)
+
     return response
 
 
-main()
+if __name__ == "__main__":
+    main()

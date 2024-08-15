@@ -12,9 +12,9 @@ from shapely.geometry import LineString, MultiLineString
 import dash_ag_grid as dag
 
 # Data imports
-vz_moped = pd.read_csv('../Output/annualized_statistics.csv')
+# vz_moped = pd.read_csv('../Output/annualized_statistics.csv')
 
-# vz_moped = pd.read_csv('https://data.austintexas.gov/resource/a65x-x4y7.csv?$limit=9999999')
+vz_moped = pd.read_csv('https://data.austintexas.gov/resource/a65x-x4y7.csv?$limit=9999999')
 
 # Dropdown menu formatting
 columns_to_display = [
@@ -484,6 +484,6 @@ def update_plot(
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8222)
+    app.run_server(debug=False, host="0.0.0.0", port=8050)
 
 
