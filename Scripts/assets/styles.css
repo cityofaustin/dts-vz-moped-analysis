@@ -5,12 +5,18 @@
 }
 
 .card-body {
-    font-size: smaller;
+    font-size: x-small;
 }
 
-.custom_card {
+/* .custom_card {
     width: 225px;
-}
+} */
+
+
+/* .filter_cards {
+    padding: -5px;
+} */
+
 
 .navigation_row {
     margin-bottom: 20px;
@@ -29,7 +35,18 @@
     font-weight: bolder;
     text-align: center;
     font-size: small;
-    /* background-color: #e5e5f1; opacity: 0.5; background-image:  repeating-radial-gradient( circle at 0 0, transparent 0, #e5e5f1 10px ), repeating-linear-gradient( #444cf755, #444cf7 ); */
+    background-color: #e5e5f1; opacity: 0.5; background-image:  repeating-radial-gradient( circle at 0 0, transparent 0, #e5e5f1 10px ), repeating-linear-gradient( #444cf755, #444cf7 );
+    
+    
+    /* background-color: #e5e5f1;
+    opacity: 0.4;
+    background-image: radial-gradient(#444cf7 0.8px, #e5e5f1 0.8px);
+    background-size: 16px 16px; */
+    /* background-color: #e5e5f1;
+    opacity: 0.4;
+    background-image:  linear-gradient(30deg, #000dff 12%, transparent 12.5%, transparent 87%, #000dff 87.5%, #000dff), linear-gradient(150deg, #000dff 12%, transparent 12.5%, transparent 87%, #000dff 87.5%, #000dff), linear-gradient(30deg, #000dff 12%, transparent 12.5%, transparent 87%, #000dff 87.5%, #000dff), linear-gradient(150deg, #000dff 12%, transparent 12.5%, transparent 87%, #000dff 87.5%, #000dff), linear-gradient(60deg, #000dff77 25%, transparent 25.5%, transparent 75%, #000dff77 75%, #000dff77), linear-gradient(60deg, #000dff77 25%, transparent 25.5%, transparent 75%, #000dff77 75%, #000dff77);
+    background-size: 32px 56px;
+    background-position: 0 0, 0 0, 16px 28px, 16px 28px, 0 0, 16px 28px; */
 }
 
 .map {
